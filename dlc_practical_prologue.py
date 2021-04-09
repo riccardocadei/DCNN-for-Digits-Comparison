@@ -1,7 +1,10 @@
+
 import torch
 from torchvision import datasets
 
 import argparse
+import sys
+sys.argv = ['']
 import os
 
 import urllib
