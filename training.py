@@ -5,6 +5,7 @@ from torch.nn import functional as F
 import math
 
 import dlc_practical_prologue as prologue
+from other import *
 
 
 # returns a split in train and validation data
@@ -22,7 +23,7 @@ def random_split(train_input, train_target, train_classes, percentage_valid=0.1)
     train_classes, valid_classes = torch.split(train_classes, [train_size, valid_size])
     return train_input, train_target, train_classes, valid_input, valid_target, valid_classes
 
-# since our task is to predict wether the first channel of images in train_input
+# since our task is to predict whether the first channel of images in train_input
 # is lesser or equal than the second channel, we can flip the two channels and double our
 # dataset size
 def augment(train_input, train_target, train_classes):
@@ -33,7 +34,7 @@ def augment(train_input, train_target, train_classes):
     flipped_input[:,0] = train_input[:, 1].clone()
     flipped_input[:,1] = train_input[:, 0].clone()
 
-    flipped_target = 1 - train_target
+    flipped_target = ((train_classes[:,1]-train_classes[:,0])<=0).int()
 
     flipped_classes[:,0] = train_classes[:,1].clone()
     flipped_classes[:,1] = train_classes[:,0].clone()
@@ -43,50 +44,51 @@ def augment(train_input, train_target, train_classes):
     return augmented_input, augmented_target, augmented_classes
 
 
+def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, 
+                            mini_batch_size = 50, lr = 1e-3*0.5, percentage_valid=0.1, verbose=False):
 
-def run_experiment_no_aux(model, nb_epochs = 25, 
-                weight_decay = 0.1, mini_batch_size = 50, lr = 1e-3*0.5):
-
-    criterion = nn.CrossEntropyLoss()
-    optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=weight_decay)
+    # device
     device = ('cuda' if torch.cuda.is_available() else 'cpu')
-    print("Device used:", device)
+    print("Device used: ", device)
 
-    N = 1000 # size of train and test
+    # loading the data
+    N = 1000 
     (train_input, train_target, train_classes,
      test_input, test_target, test_classes) = prologue.generate_pair_sets(N)
-    print("Loaded train and test datasets, of size:", N)
+    print("Loading training and test set...")
 
-    print("train_classes size is", train_classes.size())
-    # break into validation and training
+    # splitting the dataset and data augmentation
     (train_input, train_target, train_classes,
-     valid_input, valid_target, valid_classes) = random_split(train_input, train_target, train_classes)
-    print("Built validation and training datasets of sizes:", valid_input.size(0), train_input.size(0), "respectively")
-
-    print("train_classes size is", train_classes.size())
-
+     valid_input, valid_target, valid_classes) = random_split(train_input, train_target, train_classes, percentage_valid)
+    print("Splitting the training set in training and validation set...")
     train_input, train_target, train_classes = augment(train_input, train_target, train_classes)
-    print("Augmenting training dataset, new size is:", train_input.size(0))
+    print("Data augmentation...")
+    print("In total there are: \n - {} samples in the Training Set ({} *2), \n - {} samples in the Validation Set, \n - {} samples in the Test Set"
+        .format(train_input.size(0), int((1-percentage_valid)*N), int(percentage_valid*N), N))
+
+    print('Number of parameters of the model: {}'.format(count_parameters(model)))
 
     # move to Device
     model.to(device)
-    
     train_input.to(device)
     train_target.to(device)
     valid_input.to(device)
     valid_target.to(device)
-    
-    train_losses, valid_losses = train(model, train_input, train_target, valid_input, valid_target,
-                                        optimizer, criterion, mini_batch_size=mini_batch_size)
-
     test_input.to(device)
     test_target.to(device)
+    
+    # training
+    criterion = nn.CrossEntropyLoss()
+    optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=weight_decay)
+    print('Training...')
+    train_losses, valid_losses = train(model, train_input, train_target, valid_input, valid_target, optimizer, criterion, 
+                                        nb_epochs=nb_epochs,  mini_batch_size=mini_batch_size, verbose=verbose)
+
+    # evaluate the performances
     test_error = test(model, test_input, test_target)
-    print('Test error: {0:.3f} %'.format( test_error*100))
+    print('\nTest error: {0:.3f} %'.format(test_error*100) )
 
     return train_losses, valid_losses, test_error
-
-
 
 
 

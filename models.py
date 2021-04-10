@@ -3,12 +3,12 @@ from torch import nn
 from torch import optim
 from torch.nn import functional as F
 
-class IneqNET(nn.Module):
+class IneqCNet(nn.Module):
     """
     Description
     """
     def __init__(self):
-        super(IneqNET, self).__init__()
+        super(IneqCNet, self).__init__()
         
         self.conv1 = nn.Conv2d(2, 16, kernel_size=5, padding = 3)
         self.conv2 = nn.Conv2d(16, 20, kernel_size=3, padding = 3)
