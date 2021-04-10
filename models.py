@@ -33,3 +33,31 @@ class IneqNET(nn.Module):
         x = self.fc2(F.dropout(x)) 
         
         return x
+
+class IneqMLP(nn.Module):
+    """
+    MLP with 4 layers
+    """
+    def __init__(self):
+        super(IneqMLP, self).__init__()
+        
+        self.layers = nn.Sequential(
+            nn.Linear(392, 196),
+            nn.ReLU(),
+            nn.Linear(196, 98),
+            nn.ReLU(),
+            nn.Linear(98, 49),
+            nn.ReLU(),
+            nn.Linear(49, 20),
+            nn.ReLU(),
+            nn.Linear(20, 2),
+        )
+        
+    def forward(self, x):
+        """
+        General structure of one layer:
+            Input -> Linear -> Activation(ReLu) -> Output
+        """
+        x = x.view(x.size(0), -1)
+        x = self.layers(x)
+        return x
