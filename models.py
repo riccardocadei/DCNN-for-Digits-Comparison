@@ -42,13 +42,13 @@ class IneqMLP(nn.Module):
         super(IneqMLP, self).__init__()
         
         self.layers = nn.Sequential(
-            nn.Linear(392, 196),
+            nn.Linear(392, 350),
             nn.ReLU(),
-            nn.Linear(196, 98),
+            nn.Linear(350, 250),
             nn.ReLU(),
-            nn.Linear(98, 49),
+            nn.Linear(250, 200),
             nn.ReLU(),
-            nn.Linear(49, 20),
+            nn.Linear(200, 20),
             nn.ReLU(),
             nn.Linear(20, 2),
         )
