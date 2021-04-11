@@ -89,11 +89,11 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
     if verbose >= 1: print("Loaded model weights from", path)
 
     # evaluate the performances
-    train_error = test(model, train_input, train_target)
+    train_error = test(model, train_input, train_target, device)
     if verbose>=1: print('\nTraining error: {0:.3f} %'.format(train_error*100) )
-    val_error = test(model, val_input, val_target)
+    val_error = test(model, val_input, val_target, device)
     if verbose>=1: print('Validation error: {0:.3f} %'.format(val_error*100) )
-    test_error = test(model, test_input, test_target)
+    test_error = test(model, test_input, test_target, device)
     if verbose>=1: print('Test error: {0:.3f} %'.format(test_error*100) )
 
     return train_losses, val_losses, (train_error, val_error, test_error)
@@ -167,10 +167,18 @@ def evaluate_model(model, n, nb_epochs = 25, weight_decay = 0.1,
     print('Test Set: \n- Mean: {0:.3f},\n- Standard Error: {0:.3f}'.format(mean_test_error,std_test_error) )
     return
 
-def test(model, test_input, test_target):
+def test(model, test_input, test_target, device):
     model.eval()
-    predict_classes_perc = model(test_input)
-    _, predicted_classes = predict_classes_perc.max(1)
+    preds = torch.empty(test_target.size(0), 2).to(device)
+    # avoid memory overflow
+    batch_size = 20
+    for i in range(0, test_input.size(0), batch_size):
+      inputs = test_input.narrow(0, i, batch_size)
+      with torch.no_grad():
+        outputs = model(inputs)
+      preds[i : i + batch_size, :] = outputs
+        
+    _, predicted_classes = preds.max(1)
     test_error = (predicted_classes-test_target).abs().sum() / test_target.size(0)
     return test_error
     
