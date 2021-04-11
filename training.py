@@ -68,13 +68,13 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
     if verbose>=1: print('Number of parameters of the model: {}'.format(count_parameters(model)))
 
     # move to Device
-    model.to(device)
-    train_input.to(device)
-    train_target.to(device)
-    val_input.to(device)
-    val_target.to(device)
-    test_input.to(device)
-    test_target.to(device)
+    model = model.to(device)
+    train_input = train_input.to(device)
+    train_target = train_target.to(device)
+    val_input = val_input.to(device)
+    val_target = val_target.to(device)
+    test_input = test_input.to(device)
+    test_target = test_target.to(device)
     
     # training
     criterion = nn.CrossEntropyLoss()
