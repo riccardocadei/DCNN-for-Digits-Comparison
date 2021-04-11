@@ -7,6 +7,6 @@ from training import *
 from other import *
 
 
-model = IneqNET()
+model = IneqCNet()
 
-train_losses, test_losses, test_error = run_experiment_no_aux(model)
+train_losses, test_losses, test_error = run_experiment(model, verbose=2)

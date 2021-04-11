@@ -44,7 +44,7 @@ def augment(train_input, train_target, train_classes):
     return augmented_input, augmented_target, augmented_classes
 
 
-def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, 
+def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model",
                             mini_batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=1):
 
     # device
@@ -58,6 +58,7 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1,
     if verbose>=1: print("Loading training and test set...")
     # splitting the dataset and data augmentation
     (train_input, train_target, train_classes,val_input, val_target, val_classes) = random_split(train_input, train_target, train_classes, percentage_val)
+
     if verbose>=1: print("Splitting the training set in training and validation set...")
     train_input, train_target, train_classes = augment(train_input, train_target, train_classes)
     if verbose>=1: print("Data augmentation...")
@@ -79,8 +80,13 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1,
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=weight_decay)
     if verbose>=1: print('Training...')
-    train_losses, val_losses = train(model, train_input, train_target, val_input, val_target, optimizer, criterion, 
+    train_losses, val_losses = train(model, train_input, train_target, val_input, val_target, optimizer, criterion, model_name=model_name,
                                         nb_epochs=nb_epochs,  mini_batch_size=mini_batch_size, verbose=verbose)
+    
+    # load weights of best model in validation
+    path = "./model_weights/" + model_name + ".pth"
+    model.load_state_dict(torch.load(path))
+    if verbose >= 1: print("Loaded model weights from", path)
 
     # evaluate the performances
     train_error = test(model, train_input, train_target)
@@ -95,7 +101,7 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1,
 
 
 def train(model, train_input, train_target, val_input, val_target, 
-                 optimizer, criterion, nb_epochs = 25, mini_batch_size=50, verbose=2):
+                 optimizer, criterion, model_name="model", nb_epochs = 25, mini_batch_size=50, verbose=2):
     """
     Train model
     """
@@ -104,6 +110,7 @@ def train(model, train_input, train_target, val_input, val_target,
     for epoch in range(nb_epochs):
         train_loss_e = 0
         num_batches = 0
+        model.train()
         # train batch
         for b in range(0, train_input.size(0), mini_batch_size):
             # Forward step
@@ -122,10 +129,14 @@ def train(model, train_input, train_target, val_input, val_target,
         train_loss = train_loss_e / num_batches
         train_losses.append(train_loss)
 
+        model.eval()
         # validation
         val_preds = model(val_input)
         val_loss = criterion(val_preds, val_target).data.item()
         val_losses.append(val_loss)
+        # save best model in validation
+        if val_loss <= min(val_losses):
+            torch.save(model.state_dict(), "./model_weights/" + model_name + ".pth")
 
         if verbose==2:
             print("Epoch", epoch+1, "/", nb_epochs, "train loss:", train_loss, "valid loss:", val_loss)
@@ -157,6 +168,7 @@ def evaluate_model(model, n, nb_epochs = 25, weight_decay = 0.1,
     return
 
 def test(model, test_input, test_target):
+    model.eval()
     predict_classes_perc = model(test_input)
     _, predicted_classes = predict_classes_perc.max(1)
     test_error = (predicted_classes-test_target).abs().sum() / test_target.size(0)
