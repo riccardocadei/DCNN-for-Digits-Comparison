@@ -6,6 +6,7 @@ import math
 from datetime import datetime
 from torch.nn.modules.loss import _Loss
 from torch import Tensor
+import time
 
 import dlc_practical_prologue as prologue
 from other import *
@@ -96,6 +97,7 @@ def run_experiment(model, use_auxiliary_loss, nb_epochs = 25, weight_decay = 0.1
 
     # loading the data
     N = 1000 
+    start = time.time()
     (train_input, train_target, train_classes,
      test_input, test_target, test_classes) = prologue.generate_pair_sets(N)
     if verbose>=1: print("Loading training and test set...")
@@ -105,6 +107,8 @@ def run_experiment(model, use_auxiliary_loss, nb_epochs = 25, weight_decay = 0.1
     if verbose>=1: print("Splitting the training set in training and validation set...")
     train_input, train_target, train_classes = augment(train_input, train_target, train_classes)
     if verbose>=1: print("Data augmentation...")
+    end = time.time()
+    if verbose >= 1: print('Preparing the data time: {0:.3f} seconds'.format(end-start))
     if verbose>=1: print("In total there are: \n - {} samples in the Training Set ({} *2), \n - {} samples in the Validation Set, \n - {} samples in the Test Set"
         .format(train_input.size(0), int((1-percentage_val)*N), int(percentage_val*N), N))
 
@@ -124,13 +128,18 @@ def run_experiment(model, use_auxiliary_loss, nb_epochs = 25, weight_decay = 0.1
     
     # training
     criterion = get_criterion(use_auxiliary_loss)
+    if use_auxiliary_loss:
+        print("using auxiliary loss with weights: \n{} * 2 for classification \n{} for inequality".format(
+            criterion.weight_classification, criterion.weight_inequality
+        ))
+
     optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=weight_decay)
     if verbose>=1: print('Training...')
-    start = datetime.now()
+    start = time.time()
     train_losses, val_losses = train(model, train_input, train_target, val_input, val_target, optimizer, criterion, model_name=model_name,
                                         nb_epochs=nb_epochs,  mini_batch_size=mini_batch_size, verbose=verbose)
-    end = datetime.now()
-    if verbose >= 1: print('Training time: {0:.3f} seconds'.format((end-start).microseconds/1000000))
+    end = time.time()
+    if verbose >= 1: print('Training time: {0:.3f} seconds'.format(end-start))
     path = "./model_weights/" + model_name + ".pth"
     if verbose >= 1: print("Saved the model weights in: ", path)
 
