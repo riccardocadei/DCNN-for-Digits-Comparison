@@ -8,7 +8,7 @@ class IneqCNet(nn.Module):
     """
     Description
     """
-    def __init__(self):
+    def __init__(self, n_classes=2):
         super(IneqCNet, self).__init__()
         
         self.conv1 = nn.Conv2d(2, 16, kernel_size=5, padding = 3)
@@ -17,7 +17,7 @@ class IneqCNet(nn.Module):
         self.bn2 = nn.BatchNorm2d(20)
         self.bn3 = nn.BatchNorm1d(720)
         self.fc1 = nn.Linear(720, 100)
-        self.fc2 = nn.Linear(100, 2)
+        self.fc2 = nn.Linear(100, n_classes)
         
     def forward(self, x):
         """
@@ -39,7 +39,7 @@ class IneqMLP(nn.Module):
     """
     MLP with 4 layers
     """
-    def __init__(self):
+    def __init__(self, n_classes=2):
         super(IneqMLP, self).__init__()
         
         self.layers = nn.Sequential(
@@ -51,7 +51,7 @@ class IneqMLP(nn.Module):
             nn.ReLU(),
             nn.Linear(200, 20),
             nn.ReLU(),
-            nn.Linear(20, 2),
+            nn.Linear(20, n_classes),
         )
         
     def forward(self, x):

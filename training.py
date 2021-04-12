@@ -4,6 +4,8 @@ from torch import optim
 from torch.nn import functional as F
 import math
 from datetime import datetime
+from torch.nn.modules.loss import _Loss
+from torch import Tensor
 
 import dlc_practical_prologue as prologue
 from other import *
@@ -45,8 +47,48 @@ def augment(train_input, train_target, train_classes):
     return augmented_input, augmented_target, augmented_classes
 
 
-def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model",
-                            mini_batch_size = 50, lr = 1e-3*0.5, period=1, percentage_val=0.1, verbose=1, plot=True):
+class AuxiliaryLoss(_Loss):
+    def __init__(self, reduction='mean', weight_classification=0.2 , weight_inequality=0.6):
+        super().__init__(reduction=reduction)
+        self.reduction = reduction
+        tot = weight_classification * 2 + weight_inequality
+        if  tot != 1.0:
+            raise ValueError("2 * weight classification + weight of inequality must be 1!But you gave:", tot)
+        self.weight_classification = weight_classification
+        self.weight_inequality = weight_inequality
+
+    # preds is of size: (N, 2 (inequality) + 10 (class1) + 10 (class2))
+    # target is of size: (N, 1 (inequality) + 1 (class1) + 1 (class2))
+    def forward(self, preds: Tensor, target: Tensor):
+        loss_ineq = F.cross_entropy(preds[:, :2], target[:,0])
+        loss_class1 = F.cross_entropy(preds[:, 2:12], target[:, 1])
+        loss_class2 = F.cross_entropy(preds[:, 12:22], target[:, 2])
+        loss = self.weight_classification * (loss_class1 + loss_class2) + self.weight_inequality * loss_ineq
+        return loss.mean()
+
+
+
+def build_target(train_target, train_classes, use_auxiliary_loss):
+    if not use_auxiliary_loss:
+        return train_target
+    else:
+        target = torch.empty(train_target.size(0), 3)
+        target[:, 0] = train_target
+        target[:, 1:] = train_classes
+        return target.long()
+
+
+def get_criterion(use_auxiliary_loss, weight_classification=0.2, weight_inequality=0.6):
+    if not use_auxiliary_loss:
+        return nn.CrossEntropyLoss()
+    else:
+        return AuxiliaryLoss(weight_classification=weight_classification,
+                                         weight_inequality=weight_inequality)
+        
+
+
+def run_experiment(model, use_auxiliary_loss, nb_epochs = 25, weight_decay = 0.1, model_name="model", period=1,
+                            mini_batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=1, plot=True):
 
     # device
     device = ('cuda' if torch.cuda.is_available() else 'cpu')
@@ -58,7 +100,7 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
      test_input, test_target, test_classes) = prologue.generate_pair_sets(N)
     if verbose>=1: print("Loading training and test set...")
     # splitting the dataset and data augmentation
-    (train_input, train_target, train_classes,val_input, val_target, val_classes) = random_split(train_input, train_target, train_classes, percentage_val)
+    (train_input, train_target, train_classes, val_input, val_target, val_classes) = random_split(train_input, train_target, train_classes, percentage_val)
 
     if verbose>=1: print("Splitting the training set in training and validation set...")
     train_input, train_target, train_classes = augment(train_input, train_target, train_classes)
@@ -67,6 +109,9 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
         .format(train_input.size(0), int((1-percentage_val)*N), int(percentage_val*N), N))
 
     if verbose>=1: print('Number of parameters of the model: {}'.format(count_parameters(model)))
+
+    train_target = build_target(train_target, train_classes, use_auxiliary_loss)
+    val_target = build_target(val_target, val_classes, use_auxiliary_loss)
 
     # move to Device
     model = model.to(device)
@@ -78,7 +123,7 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
     test_target = test_target.to(device)
     
     # training
-    criterion = nn.CrossEntropyLoss()
+    criterion = get_criterion(use_auxiliary_loss)
     optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=weight_decay)
     if verbose>=1: print('Training...')
     start = datetime.now()
@@ -93,9 +138,9 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
     model.load_state_dict(torch.load(path))
 
     # evaluate the performances
-    train_error = test(model, train_input, train_target, device)
+    train_error = test(model, train_input, train_target[:,0], device)
     if verbose>=1: print('\nTraining error: {0:.3f} %'.format(train_error*100) )
-    val_error = test(model, val_input, val_target, device)
+    val_error = test(model, val_input, val_target[:,0], device)
     if verbose>=1: print('Validation error: {0:.3f} %'.format(val_error*100) )
     test_error = test(model, test_input, test_target, device)
     if verbose>=1: print('Test error: {0:.3f} %'.format(test_error*100) )
@@ -103,6 +148,8 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
     if plot==True: plot_train_val(train_losses, val_losses, period=period, model_name=model_name)
 
     return train_losses, val_losses, (train_error, val_error, test_error)
+
+
 
 
 
@@ -181,10 +228,12 @@ def test(model, test_input, test_target, device):
     for i in range(0, test_input.size(0), batch_size):
       inputs = test_input.narrow(0, i, batch_size)
       with torch.no_grad():
-        outputs = model(inputs)
+         # select only the first two columns in case auxiliary loss is used in training
+        outputs = model(inputs)[:, 0:2]
       preds[i : i + batch_size, :] = outputs
         
     _, predicted_classes = preds.max(1)
     test_error = (predicted_classes-test_target).abs().sum() / test_target.size(0)
     return test_error
     
+
