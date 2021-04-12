@@ -50,6 +50,8 @@ def run_experiment(model, use_auxiliary_loss, nb_epochs = 25, weight_decay = 0.1
     # move to device static data, training data is augmented, so it will be copied on device later
     model = model.to(device)
 
+    train_input = train_input.to(device)
+    train_target = train_target.to(device)
     val_input = val_input.to(device)
     val_target = val_target.to(device)
     test_input = test_input.to(device)
@@ -65,7 +67,7 @@ def run_experiment(model, use_auxiliary_loss, nb_epochs = 25, weight_decay = 0.1
     optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=weight_decay)
     if verbose>=1: print('Training...')
     start = time.time()
-    train_losses, val_losses = train(model, train_loader, val_input, val_target, optimizer, criterion, model_name=model_name,
+    train_losses, val_losses = train(model, train_loader, val_input, val_target, optimizer, criterion, device, model_name=model_name,
                                         nb_epochs=nb_epochs,  mini_batch_size=mini_batch_size, verbose=verbose)
     end = time.time()
     if verbose >= 1: print('Training time: {0:.3f} seconds'.format(end-start))
@@ -92,7 +94,7 @@ def run_experiment(model, use_auxiliary_loss, nb_epochs = 25, weight_decay = 0.1
 
 
 def train(model, train_loader, val_input, val_target, 
-                 optimizer, criterion, model_name="model", nb_epochs = 25, mini_batch_size=50, verbose=2):
+                 optimizer, criterion, device, model_name="model", nb_epochs = 25, mini_batch_size=50, verbose=2):
     """
     Train model
     """
@@ -104,7 +106,8 @@ def train(model, train_loader, val_input, val_target,
         # train batch
         for data in train_loader:
             inputs, targets = data
-            targets = targets.view(targets.size(0), -1)
+            inputs = inputs.to(device)
+            targets = targets.view(targets.size(0), -1).to(device)
             # Forward step
             output = model(inputs)
             # Compute the Loss
