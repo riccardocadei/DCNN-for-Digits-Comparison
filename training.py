@@ -3,6 +3,7 @@ from torch import nn
 from torch import optim
 from torch.nn import functional as F
 import math
+from datetime import datetime
 
 import dlc_practical_prologue as prologue
 from other import *
@@ -45,7 +46,7 @@ def augment(train_input, train_target, train_classes):
 
 
 def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model",
-                            mini_batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=1):
+                            mini_batch_size = 50, lr = 1e-3*0.5, period=1, percentage_val=0.1, verbose=1, plot=True):
 
     # device
     device = ('cuda' if torch.cuda.is_available() else 'cpu')
@@ -80,13 +81,16 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
     criterion = nn.CrossEntropyLoss()
     optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=weight_decay)
     if verbose>=1: print('Training...')
+    start = datetime.now()
     train_losses, val_losses = train(model, train_input, train_target, val_input, val_target, optimizer, criterion, model_name=model_name,
                                         nb_epochs=nb_epochs,  mini_batch_size=mini_batch_size, verbose=verbose)
-    
-    # load weights of best model in validation
+    end = datetime.now()
+    if verbose >= 1: print('Training time: {0:.3f} seconds'.format((end-start).microseconds/1000000))
     path = "./model_weights/" + model_name + ".pth"
+    if verbose >= 1: print("Saved the model weights in: ", path)
+
+    # load weights of best model in validation
     model.load_state_dict(torch.load(path))
-    if verbose >= 1: print("Loaded model weights from", path)
 
     # evaluate the performances
     train_error = test(model, train_input, train_target, device)
@@ -95,6 +99,8 @@ def run_experiment(model, nb_epochs = 25, weight_decay = 0.1, model_name="model"
     if verbose>=1: print('Validation error: {0:.3f} %'.format(val_error*100) )
     test_error = test(model, test_input, test_target, device)
     if verbose>=1: print('Test error: {0:.3f} %'.format(test_error*100) )
+
+    if plot==True: plot_train_val(train_losses, val_losses, period=period, model_name=model_name)
 
     return train_losses, val_losses, (train_error, val_error, test_error)
 
@@ -152,7 +158,7 @@ def evaluate_model(model, n, nb_epochs = 25, weight_decay = 0.1,
     print('Number of experiments: {}'.format(n))
     print('Computing...')
     for i in range(n):
-        _, _, errors = run_experiment(model, nb_epochs = 25, verbose=verbose)
+        _, _, errors = run_experiment(model, nb_epochs=nb_epochs, percentage_val=percentage_val, mini_batch_size=mini_batch_size, weight_decay=weight_decay, lr=lr, verbose=verbose, plot=False);
         train_errors.append(errors[0])
         val_errors.append(errors[1])
         test_errors.append(errors[2])
@@ -162,9 +168,9 @@ def evaluate_model(model, n, nb_epochs = 25, weight_decay = 0.1,
     std_train_error = torch.std(torch.Tensor(train_errors))
     std_val_error = torch.std(torch.Tensor(val_errors))
     std_test_error = torch.std(torch.Tensor(test_errors))
-    print('Training Set: \n- Mean: {0:.3f},\n- Standard Error: {0:.3f}'.format(mean_train_error,std_train_error) )
-    print('Validation Set: \n- Mean: {0:.3f},\n- Standard Error: {0:.3f}'.format(mean_val_error,std_val_error) )
-    print('Test Set: \n- Mean: {0:.3f},\n- Standard Error: {0:.3f}'.format(mean_test_error,std_test_error) )
+    print('Training Set: \n- Mean: {0:.3f}\n- Standard Error: {0:.3f}'.format(mean_train_error,std_train_error) )
+    print('Validation Set: \n- Mean: {0:.3f}\n- Standard Error: {0:.3f}'.format(mean_val_error,std_val_error) )
+    print('Test Set: \n- Mean: {0:.3f}\n- Standard Error: {0:.3f}'.format(mean_test_error,std_test_error) )
     return
 
 def test(model, test_input, test_target, device):
