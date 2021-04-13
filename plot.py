@@ -1,16 +1,6 @@
 import torch
 import matplotlib.pyplot as plt
 
-
-# Useful 
-
-def count_parameters(model):
-    return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-############################################################
-
-# Plots
-
 def plot_train_val(m_train, m_val, period, 
                     al_param=False, metric='Cross-Entropy Loss', save=True, model_name=''):
     """Plot the evolution of the metric evaluated on the training and validation set during the trainining

@@ -8,7 +8,7 @@ class IneqCNet(nn.Module):
     """
     Description
     """
-    def __init__(self, n_classes=2):
+    def __init__(self, use_auxiliary_loss):
         super(IneqCNet, self).__init__()
         
         self.conv1 = nn.Conv2d(2, 16, kernel_size=5, padding = 3)
@@ -34,6 +34,40 @@ class IneqCNet(nn.Module):
         x = self.fc2(F.dropout(x)) 
         
         return x
+
+class IneqCNetAux(nn.Module):
+    """
+    Description
+    """
+    def __init__(self):
+        super(IneqCNetAux, self).__init__()
+        
+        self.conv1 = nn.Conv2d(2, 16, kernel_size=5, padding = 3)
+        self.conv2 = nn.Conv2d(16, 20, kernel_size=3, padding = 3)
+        self.bn1 = nn.BatchNorm2d(16)
+        self.bn2 = nn.BatchNorm2d(20)
+        self.bn3 = nn.BatchNorm1d(720)
+        self.fc1 = nn.Linear(720, 100)
+        self.fc2 = nn.Linear(100, 20)
+        self.fc3 = nn.Linear(20, 2)
+        
+    def forward(self, x):
+        """
+        General structure of one layer:
+            Input -> Convolution -> BatchNorm -> Activation(ReLu) -> Maxpooling -> Output
+        """
+        # 1st layer 
+        x = F.max_pool2d(F.relu(self.bn1(self.conv1(x))), kernel_size=2)
+        # 2nd layer 
+        x = F.max_pool2d(F.relu(self.bn2(self.conv2(x))), kernel_size=2)
+        # 3rd layer
+        x = F.relu(self.fc1(self.bn3(x.view(x.size()[0], -1))))
+        # 4rd layer
+        x_class = F.relu(self.fc2(x))
+        # 5th layer
+        x = self.fc3(x_class) 
+        
+        return x_class, x
 
 class IneqMLP(nn.Module):
     """
@@ -111,9 +145,9 @@ class ResidualBlock(nn.Module):
       
 
 
-class ResNet(nn.Module):
-    def __init__(self, depth, n_classes, input_channels=2, filters=32, input_size=14):
-        super(ResNet, self).__init__()
+class ResNetAux(nn.Module):
+    def __init__(self, depth, n_classes=22, input_channels=2, filters=32, input_size=14):
+        super(ResNetAux, self).__init__()
         self.depth = depth
         self.input_channels = input_channels
         # residual blocks keep the channels with same size as input images
@@ -135,5 +169,18 @@ class ResNet(nn.Module):
         x = torch.flatten(x, start_dim=1)
         x = self.dropout(x)
         x = self.dense(x)
-        return x
+        return x[:,:20], x[:,20:]
 
+
+
+
+################################################################
+
+def count_parameters(model):
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+def use_aux_loss(model):
+    if type(model).__name__[-3:]=='Aux': 
+        return True
+    else:
+        return False
