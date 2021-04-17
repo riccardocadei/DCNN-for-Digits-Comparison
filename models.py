@@ -8,7 +8,7 @@ class IneqCNet(nn.Module):
     """
     Description
     """
-    def __init__(self, use_auxiliary_loss):
+    def __init__(self, n_classes=2):
         super(IneqCNet, self).__init__()
         
         self.conv1 = nn.Conv2d(2, 16, kernel_size=5, padding = 3)
@@ -35,39 +35,86 @@ class IneqCNet(nn.Module):
         
         return x
 
-class IneqCNetAux(nn.Module):
-    """
-    Description
-    """
-    def __init__(self):
-        super(IneqCNetAux, self).__init__()
-        
-        self.conv1 = nn.Conv2d(2, 16, kernel_size=5, padding = 3)
-        self.conv2 = nn.Conv2d(16, 20, kernel_size=3, padding = 3)
-        self.bn1 = nn.BatchNorm2d(16)
-        self.bn2 = nn.BatchNorm2d(20)
-        self.bn3 = nn.BatchNorm1d(720)
-        self.fc1 = nn.Linear(720, 100)
-        self.fc2 = nn.Linear(100, 20)
-        self.fc3 = nn.Linear(20, 2)
-        
+
+# performs convolution on image with "in_channels" channels, returns 
+# image of the same size with "filters" channels
+class ConvBlock(nn.Module):
+
+    def __init__(self, in_channels, filters=4, kernel_size=3):
+        super(ConvBlock, self).__init__()
+        self.filters = filters
+        self.kernel_size = kernel_size
+        self.conv = nn.Conv2d(in_channels, filters, kernel_size)
+        self.bn = nn.BatchNorm2d(num_features=filters)
+
     def forward(self, x):
-        """
-        General structure of one layer:
-            Input -> Convolution -> BatchNorm -> Activation(ReLu) -> Maxpooling -> Output
-        """
-        # 1st layer 
-        x = F.max_pool2d(F.relu(self.bn1(self.conv1(x))), kernel_size=2)
-        # 2nd layer 
-        x = F.max_pool2d(F.relu(self.bn2(self.conv2(x))), kernel_size=2)
-        # 3rd layer
-        x = F.relu(self.fc1(self.bn3(x.view(x.size()[0], -1))))
-        # 4rd layer
-        x_class = F.relu(self.fc2(x))
-        # 5th layer
-        x = self.fc3(x_class) 
-        
-        return x_class, x
+        padding = math.ceil(0.5 * (self.kernel_size - 1))
+        pad = nn.ZeroPad2d(padding)    
+        x = pad(x)   
+        x = self.conv(x)
+        x = self.bn(x)
+        return x
+
+# block used to compute auxiliary loss
+class AuxConvBlock(nn.Module):
+    def __init__(self, n_classes, in_channels, filters=16, kernel_size=3):
+        super(AuxConvBlock, self).__init__()
+        self.conv_block = ConvBlock(in_channels, filters, kernel_size)
+        self.avg_pool = nn.AvgPool2d(kernel_size=2) # img size goes from 14x14 to 7x7
+        self.dense = nn.Linear(in_features = filters * 7 * 7, out_features=n_classes)
+
+    def forward(self, x):
+        x = self.conv_block(x)
+        preds = self.avg_pool(x)
+        preds = torch.flatten(preds, start_dim=1)
+        preds = self.dense(preds)
+        return x, preds
+
+
+
+class ConvNet(nn.Module):
+
+    def __init__(self, use_auxiliary_loss, depth=30, n_classes=2, filters=16):
+        super(ConvNet, self).__init__()
+        if depth < 30 and use_auxiliary_loss:
+            raise ValueError("Number of ConvBlocks must be greater or equal than 30 when using auziliary loss")
+        self.depth = depth
+        self.use_auxiliary_loss = use_auxiliary_loss
+        self.filters = filters
+        blocks = []
+        blocks.append(ConvBlock(in_channels=2, filters=filters, kernel_size=3))
+        for i in range(1, self.depth):
+            # every five conv blocks insert one block to apply auxiliary loss
+            if use_auxiliary_loss and i % 5 == 0:
+                block = AuxConvBlock(n_classes = 20, in_channels=filters, filters=filters, kernel_size=3)
+            else:
+                block = ConvBlock(in_channels=filters, filters=filters, kernel_size=3)
+            blocks.append(block)
+            blocks.append(ConvBlock(in_channels=filters, filters=filters, kernel_size=3))
+        blocks.append(ConvBlock(in_channels=filters, filters=32, kernel_size=3))
+        self.conv_blocks = nn.ModuleList(blocks)
+        self.avg_pool = nn.AvgPool2d(kernel_size=14) #global average pooling
+        self.dropout = nn.Dropout()
+        self.dense = nn.Linear(in_features=32, out_features=n_classes)
+
+    def forward(self, x):
+        aux_preds = []
+        for block in self.conv_blocks:
+            if isinstance(block, AuxConvBlock):
+                x, aux_pred = block(x)
+                aux_preds.append(aux_pred)
+            else:
+                x = block(x)
+        x = self.avg_pool(x)
+        x = torch.flatten(x, start_dim=1)
+        x = self.dropout(x)
+        x = self.dense(x)   
+        if self.use_auxiliary_loss:
+            return x, aux_preds
+        else:
+            return x     
+
+            
 
 class IneqMLP(nn.Module):
     """
@@ -96,8 +143,6 @@ class IneqMLP(nn.Module):
         x = x.view(x.size(0), -1)
         x = self.layers(x)
         return x
-
-
 
 
 class ResidualBlock(nn.Module):
@@ -145,9 +190,9 @@ class ResidualBlock(nn.Module):
       
 
 
-class ResNetAux(nn.Module):
-    def __init__(self, depth, n_classes=22, input_channels=2, filters=32, input_size=14):
-        super(ResNetAux, self).__init__()
+class ResNet(nn.Module):
+    def __init__(self, depth, n_classes, input_channels=2, filters=32, input_size=14):
+        super(ResNet, self).__init__()
         self.depth = depth
         self.input_channels = input_channels
         # residual blocks keep the channels with same size as input images
@@ -169,18 +214,12 @@ class ResNetAux(nn.Module):
         x = torch.flatten(x, start_dim=1)
         x = self.dropout(x)
         x = self.dense(x)
-        return x[:,:20], x[:,20:]
+        return x
 
 
 
 
 ################################################################
-
+# returns number of trainable parameters in the model
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-def use_aux_loss(model):
-    if type(model).__name__[-3:]=='Aux': 
-        return True
-    else:
-        return False

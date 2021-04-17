@@ -12,7 +12,9 @@ from torch import Tensor
 # greyscale image of a digit
 # if augment = True we want to get a random combination of these digits every time
 # we extract one item
-class TrainDataset:
+# if use_auxiliary_loss is False the target contains only the value of the inequality (ineq)
+# otherwise it contains also the value of the two digits (ineq, digit1, digit2)
+class DigitsDataset:
     def __init__(self, train_images: Tensor, train_target: Tensor, train_classes: Tensor, augment: bool,
                                          use_auxiliary_loss: bool):
         self.use_auxiliary_loss = use_auxiliary_loss
@@ -42,7 +44,12 @@ class TrainDataset:
 
     def __getitem__(self, idx):
         if not self.augment:
-            target = build_target(self.train_target[idx], self.train_classes[idx], self.use_auxiliary_loss)
+            target = build_target(self.train_target[idx], self.train_classes[idx],
+                                         self.use_auxiliary_loss)
+            if not self.use_auxiliary_loss: 
+                target = target.item()
+            else:
+                target = target[0]
             return self.images[idx], target
         
         else:
@@ -61,6 +68,10 @@ class TrainDataset:
             image[1] = img2
 
             target = build_target(train_target, train_classes, self.use_auxiliary_loss)
+            if not self.use_auxiliary_loss: 
+                target = target.item()
+            else:
+                target = target[0]
             return image, target
 
 
@@ -80,33 +91,14 @@ def random_split(train_input, train_target, train_classes, percentage_val=0.1):
     train_classes, val_classes = torch.split(train_classes, [train_size, val_size])
     return train_input, train_target, train_classes, val_input, val_target, val_classes
 
-# since our task is to predict whether the first channel of images in train_input
-# is lesser or equal than the second channel, we can flip the two channels and double our
-# dataset size
-def augment(train_input, train_target, train_classes):
-    flipped_input = torch.empty(train_input.size())
-    flipped_target = torch.empty(train_target.size())
-    flipped_classes = torch.empty(train_classes.size())
-
-    flipped_input[:,0] = train_input[:, 1].clone()
-    flipped_input[:,1] = train_input[:, 0].clone()
-
-    flipped_target = ((train_classes[:,1]-train_classes[:,0])<=0).int()
-
-    flipped_classes[:,0] = train_classes[:,1].clone()
-    flipped_classes[:,1] = train_classes[:,0].clone()
-    augmented_input = torch.cat((train_input, flipped_input), dim=0)
-    augmented_target = torch.cat((train_target, flipped_target), dim=0)
-    augmented_classes = torch.cat((train_classes, flipped_classes), dim=0)
-    return augmented_input, augmented_target, augmented_classes
 
 
 
 def build_target(train_target, train_classes, use_auxiliary_loss):
     if not use_auxiliary_loss:
-        return train_target
+        return train_target.view(-1)
     else:
-        target = torch.empty(train_target.size(0), 3)
+        target = torch.empty(1, 3)
         target[:, 0] = train_target
         target[:, 1:] = train_classes
         return target.long()
