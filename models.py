@@ -53,7 +53,7 @@ class ConvBlock(nn.Module):
         x = pad(x)   
         x = self.conv(x)
         x = self.bn(x)
-        x = F.ReLU(x)
+        x = F.relu(x)
         return x
 
 # block used to compute auxiliary loss
