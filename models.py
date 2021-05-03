@@ -4,12 +4,12 @@ from torch import optim
 from torch.nn import functional as F
 import math
 
-class IneqCNet(nn.Module):
+class ConvNet(nn.Module):
     """
     Description
     """
     def __init__(self, n_classes=2):
-        super(IneqCNet, self).__init__()
+        super(ConvNet, self).__init__()
         
         self.conv1 = nn.Conv2d(2, 16, kernel_size=5, padding = 3)
         self.conv2 = nn.Conv2d(16, 20, kernel_size=3, padding = 3)
@@ -73,10 +73,10 @@ class AuxConvBlock(nn.Module):
 
 
 
-class ConvNet(nn.Module):
+class DeepConvNet(nn.Module):
 
     def __init__(self, use_auxiliary_loss, depth=30, n_classes=2, filters=16, in_channels=2):
-        super(ConvNet, self).__init__()
+        super(DeepConvNet, self).__init__()
         if depth < 30 and use_auxiliary_loss:
             raise ValueError("Number of ConvBlocks must be greater or equal than 30 when using auziliary loss")
         self.depth = depth
@@ -117,12 +117,12 @@ class ConvNet(nn.Module):
 
             
 
-class IneqMLP(nn.Module):
+class MLP(nn.Module):
     """
     MLP with 4 layers
     """
     def __init__(self, n_classes=2):
-        super(IneqMLP, self).__init__()
+        super(MLP, self).__init__()
         
         self.layers = nn.Sequential(
             nn.Linear(392, 350),
@@ -222,7 +222,7 @@ class Siamese(nn.Module):
     def __init__(self, use_auxiliary_loss, filters=16):
         super(Siamese, self).__init__()
         self.auxiliary_loss = use_auxiliary_loss
-        self.back_bone = ConvNet(use_auxiliary_loss, n_classes = 10, filters=filters, in_channels=1)
+        self.back_bone = DeepConvNet(use_auxiliary_loss, n_classes = 10, filters=filters, in_channels=1)
         self.dense = nn.Linear(in_features = 10, out_features=2)
 
     def forward(self, x):

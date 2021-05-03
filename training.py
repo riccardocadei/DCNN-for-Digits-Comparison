@@ -145,7 +145,8 @@ def test(model, use_auxiliary_loss, test_input, test_target, device):
     return test_error
 
 
-def evaluate_model(model, n=10, use_auxiliary_loss=False, aux_loss_weight=0.3, nb_epochs = 25, weight_decay = 0.1, 
+def evaluate_model(model, n=10, use_auxiliary_loss=False, aux_loss_weight=0.3, model_name="model",
+                    nb_epochs = 25, weight_decay = 0.1, augment=False,
                     batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=0):
     train_errors = []
     val_errors = []
@@ -161,6 +162,8 @@ def evaluate_model(model, n=10, use_auxiliary_loss=False, aux_loss_weight=0.3, n
                                       batch_size=batch_size,
                                       weight_decay=weight_decay,
                                       lr=lr,
+                                      augment=augment,
+                                      model_name=model_name,
                                       verbose=verbose,
                                       plot=False)
         train_errors.append(errors[0])
