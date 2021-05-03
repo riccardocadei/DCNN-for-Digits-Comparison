@@ -57,7 +57,7 @@ def run_experiment(model, use_auxiliary_loss, aux_loss_weight=0.3, nb_epochs = 2
     if verbose>=1: print('Training...')
     start = time.time()
     train_losses, val_losses = train(model, train_loader, val_loader, optimizer,
-                                            criterion, device, model_name, nb_epochs)
+                                            criterion, device, model_name, nb_epochs, verbose=verbose)
     end = time.time()
     if verbose >= 1: print('Training time: {0:.3f} seconds'.format(end-start))
     path = "./model_weights/" + model_name + ".pth"
@@ -145,7 +145,7 @@ def test(model, use_auxiliary_loss, test_input, test_target, device):
     return test_error
 
 
-def evaluate_model(model, n=10, use_auxiliary_loss=False, aux_loss_weight=0.3, model_name="model",
+def evaluate_model(model, *model_params, n=10, use_auxiliary_loss=False, aux_loss_weight=0.3, model_name="model",
                     nb_epochs = 25, weight_decay = 0.1, augment=False,
                     batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=0):
     train_errors = []
@@ -154,7 +154,7 @@ def evaluate_model(model, n=10, use_auxiliary_loss=False, aux_loss_weight=0.3, m
     print('Number of experiments: {}'.format(n))
     print('Computing...')
     for i in range(n):
-        _, _, errors = run_experiment(model,
+        _, _, errors = run_experiment(model(*model_params),
                                       use_auxiliary_loss=use_auxiliary_loss,
                                       aux_loss_weight=aux_loss_weight,
                                       nb_epochs=nb_epochs,
@@ -175,7 +175,7 @@ def evaluate_model(model, n=10, use_auxiliary_loss=False, aux_loss_weight=0.3, m
     std_train_error = torch.std(torch.Tensor(train_errors))
     std_val_error = torch.std(torch.Tensor(val_errors))
     std_test_error = torch.std(torch.Tensor(test_errors))
-    print('Training Set: \n- Mean: {0:.3f}\n- Standard Error: {0:.3f}'.format(mean_train_error,std_train_error) )
-    print('Validation Set: \n- Mean: {0:.3f}\n- Standard Error: {0:.3f}'.format(mean_val_error,std_val_error) )
-    print('Test Set: \n- Mean: {0:.3f}\n- Standard Error: {0:.3f}'.format(mean_test_error,std_test_error) )
+    print('Training Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_train_error,std_train_error) )
+    print('Validation Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_val_error,std_val_error) )
+    print('Test Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_test_error,std_test_error) )
     return

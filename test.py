@@ -3,7 +3,7 @@ import torch
 from models import *
 from training import *
 
-run_experiment(MLP(n_classes=2), 
+run_experiment(model = MLP, params= n_classes=2), 
                 use_auxiliary_loss=False, 
                 aux_loss_weight=0.1,
                 nb_epochs=30,
