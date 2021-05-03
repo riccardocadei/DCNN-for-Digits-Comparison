@@ -27,11 +27,6 @@ def get_criterion(use_auxiliary_loss, weight_classification):
 def run_experiment(model, use_auxiliary_loss, aux_loss_weight=0.3, nb_epochs = 25, weight_decay = 0.1, model_name="model", augment=True,
                             batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=1, plot=True):
 
-    if use_auxiliary_loss and not isinstance(model, ConvNet):
-        raise ValueError("Cannot use auxiliary loss for Model of type:", type(model))
-    elif use_auxiliary_loss and isinstance(model, ConvNet) and not model.use_auxiliary_loss:
-        raise ValueError("Auxiliary loss not enabled in model, but it is set to True in the experiment")
-    
     device = ('cuda' if torch.cuda.is_available() else 'cpu')
     if verbose>=1: print("Device used: ", device)
     # loading the data

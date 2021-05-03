@@ -75,7 +75,7 @@ class AuxConvBlock(nn.Module):
 
 class ConvNet(nn.Module):
 
-    def __init__(self, use_auxiliary_loss, depth=30, n_classes=2, filters=16):
+    def __init__(self, use_auxiliary_loss, depth=30, n_classes=2, filters=16, in_channels=2):
         super(ConvNet, self).__init__()
         if depth < 30 and use_auxiliary_loss:
             raise ValueError("Number of ConvBlocks must be greater or equal than 30 when using auziliary loss")
@@ -83,11 +83,11 @@ class ConvNet(nn.Module):
         self.use_auxiliary_loss = use_auxiliary_loss
         self.filters = filters
         blocks = []
-        blocks.append(ConvBlock(in_channels=2, filters=filters, kernel_size=3))
+        blocks.append(ConvBlock(in_channels=in_channels, filters=filters, kernel_size=3))
         for i in range(1, self.depth):
             # every five conv blocks insert one block to apply auxiliary loss
             if use_auxiliary_loss and i % 5 == 0:
-                block = AuxConvBlock(n_classes = 20, in_channels=filters, filters=filters, kernel_size=3)
+                block = AuxConvBlock(n_classes = in_channels*10, in_channels=filters, filters=filters, kernel_size=3)
             else:
                 block = ConvBlock(in_channels=filters, filters=filters, kernel_size=3)
             blocks.append(block)
@@ -218,9 +218,40 @@ class ResNet(nn.Module):
         return x
 
 
+class Siamese(nn.Module):
+    def __init__(self, use_auxiliary_loss, filters=16):
+        super(Siamese, self).__init__()
+        self.auxiliary_loss = use_auxiliary_loss
+        self.back_bone = ConvNet(use_auxiliary_loss, n_classes = 10, filters=filters, in_channels=1)
+        self.dense = nn.Linear(in_features = 10, out_features=2)
+
+    def forward(self, x):
+        x1, x2 = torch.split(x, split_size_or_sections=[1,1], dim=1) # split channels
+        if self.auxiliary_loss:
+            x1, aux_preds1 = self.back_bone(x1)
+            x2, aux_preds2 = self.back_bone(x2)
+            x = torch.subtract(x1, x2)
+            x = self.dense(x)
+            aux_preds = []
+            for aux_pred1, aux_pred2 in zip(aux_preds1, aux_preds2):
+                aux_preds.append(torch.cat((aux_pred1, aux_pred2), dim=1))
+            return x, aux_preds
+        else:
+            x1 = self.back_bone(x1)
+            x2 = self.back_bone(x2)
+            x = torch.subtract(x1, x2)
+            x = self.dense(x)
+            return x
+
+
+
+
 
 
 ################################################################
 # returns number of trainable parameters in the model
 def count_parameters(model):
     return sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+
+

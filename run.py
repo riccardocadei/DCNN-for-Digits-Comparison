@@ -3,9 +3,9 @@ import torch
 from models import *
 from training import *
 
-run_experiment(ConvNet(depth=30, use_auxiliary_loss=True, n_classes=2, filters=32), 
-                use_auxiliary_loss=True, 
-                aux_loss_weight=0.3,
+run_experiment(ConvNet(use_auxiliary_loss=False, filters=16), 
+                use_auxiliary_loss=False, 
+                aux_loss_weight=0.1,
                 nb_epochs=25,
                 weight_decay=1e-4,
                 model_name="ConvNet",
