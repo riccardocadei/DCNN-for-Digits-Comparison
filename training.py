@@ -145,16 +145,17 @@ def test(model, use_auxiliary_loss, test_input, test_target, device):
     return test_error
 
 
-def evaluate_model(model, *model_params, n=10, use_auxiliary_loss=False, aux_loss_weight=0.3, model_name="model",
+def evaluate_model(model, *model_params, n_experiments=10, use_auxiliary_loss=False, aux_loss_weight=0.3, model_name="model",
                     nb_epochs = 25, weight_decay = 0.1, augment=False,
                     batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=0):
     train_errors = []
     val_errors = []
     test_errors = []
-    print('Number of experiments: {}'.format(n))
+    print('Number of experiments: {}'.format(n_experiments))
     print('Computing...')
-    for i in range(n):
-        _, _, errors = run_experiment(model(*model_params),
+    for i in range(n_experiments):
+        curr_model = model(*model_params)
+        _, _, errors = run_experiment(curr_model,
                                       use_auxiliary_loss=use_auxiliary_loss,
                                       aux_loss_weight=aux_loss_weight,
                                       nb_epochs=nb_epochs,
@@ -178,4 +179,4 @@ def evaluate_model(model, *model_params, n=10, use_auxiliary_loss=False, aux_los
     print('Training Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_train_error,std_train_error) )
     print('Validation Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_val_error,std_val_error) )
     print('Test Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_test_error,std_test_error) )
-    return
+    return (mean_train_error,std_train_error), (mean_val_error,std_val_error), (mean_test_error,std_test_error)

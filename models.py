@@ -235,6 +235,7 @@ class Siamese(nn.Module):
             aux_preds = []
             for aux_pred1, aux_pred2 in zip(aux_preds1, aux_preds2):
                 aux_preds.append(torch.cat((aux_pred1, aux_pred2), dim=1))
+            aux_preds.append(torch.cat((x1, x2), dim=1))
             return x, aux_preds
         else:
             x1 = self.back_bone(x1)
