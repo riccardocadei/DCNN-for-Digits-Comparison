@@ -20,7 +20,7 @@ def get_criterion(use_auxiliary_loss, weight_classification):
         return nn.CrossEntropyLoss()
     else:
         return AuxiliaryLoss(weight_classification=weight_classification,
-                                         weight_inequality=1-2*weight_classification)
+                                         weight_inequality=1-weight_classification)
         
 
 

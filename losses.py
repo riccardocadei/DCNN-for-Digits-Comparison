@@ -14,9 +14,9 @@ class AuxiliaryLoss(_Loss):
         self.reduction = reduction
         if weight_inequality < 0.5:
             raise ValueError("weight of inequality is lower than 0.5 but it's the main objective!!!")
-        tot = weight_classification * 2 + weight_inequality
+        tot = weight_classification + weight_inequality
         if  tot != 1.0:
-            raise ValueError("2 * weight_classification + weight_inequality must be equal to 1! But you gave: ", tot)
+            raise ValueError("weight_classification + weight_inequality must be equal to 1! But you gave: ", tot)
         self.weight_classification = weight_classification
         self.weight_inequality = weight_inequality
 

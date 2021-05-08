@@ -81,7 +81,7 @@ def main():
                                                              *params, 
                                                             n_experiments = n_experiment,
                                                             use_auxiliary_loss = use_aux_loss,
-                                                            aux_loss_weight=0.3, 
+                                                            aux_loss_weight=0.15, 
                                                             model_name=model_name,
                                                             nb_epochs = nb_epochs, 
                                                             weight_decay = weight_decay,
