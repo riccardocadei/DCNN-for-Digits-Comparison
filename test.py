@@ -27,7 +27,7 @@ def main():
 
     model_params = [[2], # MLP 2 classes
                 [2], # ConvNet 2 classes
-                [15, 2, 2, 128], # Resnet depth 15, 2 classes, 2 input channels, 128 channels in ConvBlocks
+                [10, 2, 2, 128], # Resnet depth 15, 2 classes, 2 input channels, 128 channels in ConvBlocks
                 [False], #DeepConvNet without aux loss
                 [True], #DeepConvNet with aux loss
                 [False], #Siamese without aux loss
