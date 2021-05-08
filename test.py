@@ -58,14 +58,16 @@ def main():
             lr = learning_rates[model_name]
             weight_decay = weight_decays[model_name]
             use_aux_loss = (model_name == "Siamese" or model_name == "DeepConvNet") and params[0] == True
+            num_model_params = count_parameters(model(*params))
 
             i+=1
             print("\nExperiment: ({}/{})".format(i, total_experiments))
-            print("Model:", model_name, " Augmentations:", augment, " Epochs:", nb_epochs, " Use Auxiliary Loss:", use_aux_loss)
+            print("Model:", model_name, " Number of Parameters:", num_model_params)
+            print("Augmentations:", augment, " Epochs:", nb_epochs, " Use Auxiliary Loss:", use_aux_loss)
 
             # saving experiment setup
             exp_data["model"].append(model_name)
-            exp_data["number_parameters"].append(count_parameters(model(*params)))
+            exp_data["number_parameters"].append(num_model_params)
             exp_data["use_auxiliary_loss"].append(use_aux_loss)
             exp_data["learning_rate"].append(lr)
             exp_data["use_augmentation"].append(augment)
