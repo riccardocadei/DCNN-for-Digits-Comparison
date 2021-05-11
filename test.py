@@ -36,15 +36,15 @@ def main():
 
     weight_decays = {"MLP": 1e-1,
                  "ConvNet": 1e-1,
-                 "ResNet": 1e-4,
-                 "DeepConvNet" : 1e-5,
-                 "Siamese": 1e-5}
+                 "ResNet": 1e-1,
+                 "DeepConvNet" : 1e-3,
+                 "Siamese": 1e-3}
 
     learning_rates = {"MLP": 1e-4,
                  "ConvNet": 1e-4,
                  "ResNet": 1e-4,
-                 "DeepConvNet" : 1e-4,
-                 "Siamese": 1e-4}
+                 "DeepConvNet" : 1e-3,
+                 "Siamese": 1e-3}
 
     use_augment = [False, True] 
     epochs = [25, 200] # 25 epochs without augmentation, 200 epochs with augmentation
@@ -100,10 +100,10 @@ def main():
             exp_data["std_test_errors"].append(std_test_error.numpy())
 
     
-    df = pd.DataFrame(data=exp_data)
-    df.to_csv("experiments.csv", index=False)
-    print("Data saved on ./experiments.csv")
-    print(df.head())
+            df = pd.DataFrame(data=exp_data)
+            df.to_csv("experiments.csv", index=False)
+            print("Data updated on ./experiments.csv")
+    #print(df.head())
 
     
 

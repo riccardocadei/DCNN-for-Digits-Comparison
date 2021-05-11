@@ -75,10 +75,8 @@ class AuxConvBlock(nn.Module):
 
 class DeepConvNet(nn.Module):
 
-    def __init__(self, use_auxiliary_loss, depth=30, n_classes=2, filters=64, in_channels=2):
+    def __init__(self, use_auxiliary_loss, depth=10, n_classes=2, filters=128, in_channels=2):
         super(DeepConvNet, self).__init__()
-        if depth < 30 and use_auxiliary_loss:
-            raise ValueError("Number of ConvBlocks must be greater or equal than 30 when using auziliary loss")
         self.depth = depth
         self.use_auxiliary_loss = use_auxiliary_loss
         self.filters = filters
@@ -219,7 +217,7 @@ class ResNet(nn.Module):
 
 
 class Siamese(nn.Module):
-    def __init__(self, use_auxiliary_loss, filters=64):
+    def __init__(self, use_auxiliary_loss, filters=128):
         super(Siamese, self).__init__()
         self.auxiliary_loss = use_auxiliary_loss
         self.back_bone = DeepConvNet(use_auxiliary_loss, n_classes = 10, filters=filters, in_channels=1)
