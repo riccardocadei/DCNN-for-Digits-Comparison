@@ -15,6 +15,7 @@ In this study we compare different Deep Neural Networks to predict the inequalit
 
 ### Environment
 The project has been developed and test with `python3.8.3`.
-Required libraries: `Pytorch`, `matplotlib`
+
+Required libraries: `Pytorch`, `matplotlib`.
 
 * * *
