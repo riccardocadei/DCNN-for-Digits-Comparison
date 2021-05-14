@@ -109,7 +109,6 @@ def main():
             exp_data["std_test_errors"].append(std_test_error.numpy())
 
 
-    print(exp_data)
     #df = pd.DataFrame(data=exp_data)
     #df.to_csv("experiments.csv", index=False)
     #print("Data updated on ./experiments.csv")
