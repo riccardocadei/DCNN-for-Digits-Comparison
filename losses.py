@@ -9,6 +9,9 @@ from torch import Tensor
 
 
 class AuxiliaryLoss(_Loss):
+    '''
+    Auxiliary Loss
+    '''
     def __init__(self, weight_classification, weight_inequality, reduction='mean'):
         super().__init__(reduction=reduction)
         self.reduction = reduction
@@ -22,7 +25,9 @@ class AuxiliaryLoss(_Loss):
 
 
     def forward(self, preds: tuple, target: Tensor):
-        
+        '''
+        Forward Step
+        '''
         ineq, all_aux_preds = preds
         loss_class1 = None
         loss_class2 = None

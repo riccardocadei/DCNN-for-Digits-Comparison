@@ -2,7 +2,7 @@ import torch
 
 from models import *
 from training import *
-import pandas as pd
+#import pandas as pd
 
 
 def main():
@@ -99,11 +99,12 @@ def main():
             exp_data["mean_test_errors"].append(mean_test_error.numpy())
             exp_data["std_test_errors"].append(std_test_error.numpy())
 
-    
-            df = pd.DataFrame(data=exp_data)
-            df.to_csv("experiments.csv", index=False)
-            print("Data updated on ./experiments.csv")
-    #print(df.head())
+
+            print(exp_data)
+            #df = pd.DataFrame(data=exp_data)
+            #df.to_csv("experiments.csv", index=False)
+            #print("Data updated on ./experiments.csv")
+            #print(df.head())
 
     
 

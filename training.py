@@ -16,6 +16,9 @@ from data_helpers import random_split, DigitsDataset
 
 
 def get_criterion(use_auxiliary_loss, weight_classification):
+    '''
+    Define Loss Function
+    '''
     if not use_auxiliary_loss:
         return nn.CrossEntropyLoss()
     else:
@@ -26,9 +29,13 @@ def get_criterion(use_auxiliary_loss, weight_classification):
 
 def run_experiment(model, use_auxiliary_loss, aux_loss_weight=0.3, nb_epochs = 25, weight_decay = 0.1, model_name="model", augment=True,
                             batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=1, plot=True):
+    '''
+    Run Experiment
+    '''
 
     device = ('cuda' if torch.cuda.is_available() else 'cpu')
     if verbose>=1: print("Device used: ", device)
+
     # loading the data
     N = 1000 
     (train_input, train_target, train_classes,
@@ -51,6 +58,7 @@ def run_experiment(model, use_auxiliary_loss, aux_loss_weight=0.3, nb_epochs = 2
 
     if verbose>=1: print('Number of parameters of the model: {}'.format(count_parameters(model)))
     model = model.to(device)    
+
     # training
     criterion = get_criterion(use_auxiliary_loss, aux_loss_weight)
     optimizer = optim.Adam(model.parameters(), lr = lr, weight_decay=weight_decay)
@@ -62,9 +70,9 @@ def run_experiment(model, use_auxiliary_loss, aux_loss_weight=0.3, nb_epochs = 2
     if verbose >= 1: print('Training time: {0:.3f} seconds'.format(end-start))
     path = "./model_weights/" + model_name + ".pth"
     if verbose >= 1: print("The model weights have been correctly saved in: ", path)
+    
     # load weights of best model in validation
     model.load_state_dict(torch.load(path))
-    
 
     # evaluate the performances
     train_error = test(model, use_auxiliary_loss, train_input, train_target, device)
@@ -79,10 +87,9 @@ def run_experiment(model, use_auxiliary_loss, aux_loss_weight=0.3, nb_epochs = 2
     return train_losses, val_losses, (train_error, val_error, test_error)
 
 
-
 def train(model, train_loader, val_loader, optimizer, criterion, device, model_name="model", nb_epochs = 25, verbose=2):
     """
-    Train model
+    Train a model
     """
     train_losses = []
     val_losses = []
@@ -126,6 +133,9 @@ def train(model, train_loader, val_loader, optimizer, criterion, device, model_n
 
 
 def test(model, use_auxiliary_loss, test_input, test_target, device):
+    '''
+    Test a model
+    '''
     model.eval()
     test_input = test_input.to(device)
     test_target = test_target.to(device)
@@ -148,6 +158,9 @@ def test(model, use_auxiliary_loss, test_input, test_target, device):
 def evaluate_model(model, *model_params, n_experiments=10, use_auxiliary_loss=False, aux_loss_weight=0.3, model_name="model",
                     nb_epochs = 25, weight_decay = 0.1, augment=False,
                     batch_size = 50, lr = 1e-3*0.5, percentage_val=0.1, verbose=0):
+    '''
+    Run 'n_experiments' experiments for a certain model and evaluate the performances
+    '''
     train_errors = []
     val_errors = []
     test_errors = []

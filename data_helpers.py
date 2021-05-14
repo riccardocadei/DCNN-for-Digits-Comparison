@@ -7,14 +7,16 @@ from datetime import datetime
 from torch.nn.modules.loss import _Loss
 from torch import Tensor
 
-
-# initial dataset has images with two channels, each channel contains one
-# greyscale image of a digit
-# if augment = True we want to get a random combination of these digits every time
-# we extract one item
-# if use_auxiliary_loss is False the target contains only the value of the inequality (ineq)
-# otherwise it contains also the value of the two digits (ineq, digit1, digit2)
+ 
 class DigitsDataset:
+    '''
+    DataLoader (including Data Augmentation)
+
+    Initial dataset has images with two channels, each channel contains one greyscale image of a digit
+    - if augment == True we get a random combination of 2 digits in the dataset every time
+    - if use_auxiliary_loss == False the target contains only the value of the inequality (ineq)
+    otherwise it contains also the classes of the two digits (ineq, digit1, digit2)
+    '''
     def __init__(self, train_images: Tensor, train_target: Tensor, train_classes: Tensor, augment: bool,
                                          use_auxiliary_loss: bool):
         self.use_auxiliary_loss = use_auxiliary_loss
@@ -78,19 +80,21 @@ class DigitsDataset:
 
 # returns a split in train and validation data
 def random_split(train_input, train_target, train_classes, percentage_val=0.1):
-    # shuffle data
+    '''
+    Ramdomly split the Training Set in Training and Validation Set
+    '''
+    # shuffling
     idx = torch.randperm(train_input.size(0))
     train_input = train_input[idx]
     train_target = train_target[idx]
     train_classes = train_classes[idx]
-    # split 
+    # splitting
     train_size = math.floor(train_input.size(0) * (1 - percentage_val))
     val_size = train_input.size(0) - train_size
     train_input, val_input = torch.split(train_input, [train_size, val_size])
     train_target, val_target = torch.split(train_target, [train_size, val_size])
     train_classes, val_classes = torch.split(train_classes, [train_size, val_size])
     return train_input, train_target, train_classes, val_input, val_target, val_classes
-
 
 
 

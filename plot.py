@@ -3,7 +3,9 @@ import matplotlib.pyplot as plt
 
 def plot_train_val(m_train, m_val, period, 
                     al_param=False, metric='Cross-Entropy Loss', save=True, model_name=''):
-    """Plot the evolution of the metric evaluated on the training and validation set during the trainining
+    """
+    Plot the evolution of the metric evaluated on the training and validation set during the trainining
+    
     Args:
         m_train: history of the metric evaluated on the train 
         m_val: history of the metric evaluated on the val 
