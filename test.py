@@ -6,7 +6,16 @@ from training import *
 
 
 def main():
-    # used to save experiment results in dataframe
+    '''
+    Run all the experiments
+
+    For each model 'num_experiments' are computed and hyper parameters and performances are saved in a dictionary
+    the total execution time using num_experiments=10 (140 experiments in total) is around 2 hours on Colab GPUs with 8GM Ram.
+    
+    IMPORTANT: we suggest to reduce the 'num_experiments'=2 if you don't want to wait as much (e.g. because running on CPU)
+    
+    To save the results in csv file: import pandas and uncomment the last 4 lines of this function
+    '''
     exp_data = {"model": [],
                 "number_parameters": [],
                 "use_auxiliary_loss":[],
@@ -27,11 +36,11 @@ def main():
 
     model_params = [[2], # MLP 2 classes
                 [2], # ConvNet 2 classes
-                [10, 2, 2, 128], # Resnet depth 15, 2 classes, 2 input channels, 128 channels in ConvBlocks
-                [False], #DeepConvNet without aux loss
-                [True], #DeepConvNet with aux loss
-                [False], #Siamese without aux loss
-                [True]] #Siamese with aux loss
+                [10, 2, 2, 128], # Resnet depth 10, 2 classes, 2 input channels, 128 channels in ConvBlocks
+                [False], # DeepConvNet without aux loss
+                [True], # DeepConvNet with aux loss
+                [False], # Siamese without aux loss
+                [True]] # Siamese with aux loss
 
 
     weight_decays = {"MLP": 1e-1,
@@ -48,7 +57,7 @@ def main():
 
     use_augment = [False, True] 
     epochs = [25, 200] # 25 epochs without augmentation, 200 epochs with augmentation
-    num_experiments = [10, 3] # 10 experiments without augmentation, 3 with augmentation
+    num_experiments = [10, 10] # 10 experiments for each model without augmentation, 10 for each model with augmentation
 
     total_experiments = 14
     i = 0
@@ -100,14 +109,13 @@ def main():
             exp_data["std_test_errors"].append(std_test_error.numpy())
 
 
-            print(exp_data)
-            #df = pd.DataFrame(data=exp_data)
-            #df.to_csv("experiments.csv", index=False)
-            #print("Data updated on ./experiments.csv")
-            #print(df.head())
+    print(exp_data)
+    #df = pd.DataFrame(data=exp_data)
+    #df.to_csv("experiments.csv", index=False)
+    #print("Data updated on ./experiments.csv")
+    #print(df.head())
 
     
-
 if __name__ == '__main__':
     main()
 
