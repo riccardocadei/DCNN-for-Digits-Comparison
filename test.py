@@ -2,19 +2,13 @@ import torch
 
 from models import *
 from training import *
+import time
 #import pandas as pd
 
 
 def main():
     '''
-    Run all the experiments
-
-    For each model 'num_experiments' are computed and hyper parameters and performances are saved in a dictionary
-    the total execution time using num_experiments=10 (140 experiments in total) is around 2 hours on Colab GPUs with 8GM Ram.
-    
-    IMPORTANT: we suggest to reduce the 'num_experiments'=2 if you don't want to wait as much (e.g. because running on CPU)
-    
-    To save the results in csv file: import pandas and uncomment the last 4 lines of this function
+    Run all the experiments once
     '''
     exp_data = {"model": [],
                 "number_parameters": [],
@@ -57,7 +51,7 @@ def main():
 
     use_augment = [False, True] 
     epochs = [25, 200] # 25 epochs without augmentation, 200 epochs with augmentation
-    num_experiments = [10, 10] # 10 experiments for each model without augmentation, 10 for each model with augmentation
+    num_experiments = [1, 1] # 10 experiments for each model without augmentation, 10 for each model with augmentation
 
     total_experiments = 14
     i = 0
@@ -99,6 +93,9 @@ def main():
                                                             lr = lr, 
                                                             percentage_val=0.1,
                                                             verbose=0)
+            print('Training Set: \n- Error: {}'.format(mean_train_error) )
+            print('Validation Set: \n- Error: {}'.format(mean_val_error))
+            print('Test Set: \n- Error: {}'.format(mean_test_error))
 
             # saving experiment results
             exp_data["mean_train_errors"].append(mean_train_error.numpy())
@@ -116,7 +113,10 @@ def main():
 
     
 if __name__ == '__main__':
+    start = time.time()
     main()
+    end = time.time()
+    print("Elapsed time in seconds:", end-start)
 
             
 
