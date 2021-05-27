@@ -113,6 +113,10 @@ def main():
 
     
 if __name__ == '__main__':
+    print("#"*100)
+    print("\n>>> NOTE: total time for running all the experiments on Google Colab GPU is: 1 hour 40 minutes")
+    print()
+    print("#"*100)
     start = time.time()
     main()
     end = time.time()
