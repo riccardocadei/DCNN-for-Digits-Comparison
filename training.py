@@ -189,7 +189,8 @@ def evaluate_model(model, *model_params, n_experiments=10, use_auxiliary_loss=Fa
     std_train_error = torch.std(torch.Tensor(train_errors))
     std_val_error = torch.std(torch.Tensor(val_errors))
     std_test_error = torch.std(torch.Tensor(test_errors))
-    print('Training Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_train_error,std_train_error) )
-    print('Validation Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_val_error,std_val_error) )
-    print('Test Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_test_error,std_test_error) )
+    if verbose >= 1:
+        print('Training Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_train_error,std_train_error) )
+        print('Validation Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_val_error,std_val_error) )
+        print('Test Set: \n- Mean: {}\n- Standard Error: {}'.format(mean_test_error,std_test_error) )
     return (mean_train_error,std_train_error), (mean_val_error,std_val_error), (mean_test_error,std_test_error)
