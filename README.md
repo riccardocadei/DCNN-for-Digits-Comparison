@@ -13,6 +13,8 @@ The project is accomplished by:
 ### Abstract
 In this study we compare different Deep Neural Networks to predict the inequality among 2 gray-scale images representing handwritten digits from MNIST database. Advantages of weight-sharing and auxiliary loss are also discussed. Training the models on a training set of 1 000 couples of images we got a test error rate equal to 2.96\%.
 
+For further information about this project, read `report.pdf`
+
 ### Environment
 The project has been developed and test with `python3.8.3`.
 
