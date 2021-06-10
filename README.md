@@ -1,8 +1,6 @@
-# EE-559 Project1
+# Digits Comparison using DCNN
 
-## General Information
-
-The repository contains the code for Project 1 of the Deep Learning (EE-559) course at EPFL during Spring term 2021. 
+The repository contains the code for Project 1 of the [Deep Learning (EE-559)](https://edu.epfl.ch/coursebook/en/deep-learning-EE-559) course at [EPFL](https://www.epfl.ch/en/) during Spring term 2021. 
 
 ### Team
 The project is accomplished by:
