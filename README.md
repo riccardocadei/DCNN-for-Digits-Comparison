@@ -1,4 +1,4 @@
-# Digits Comparison using DCNN
+# Deep Convolutional Neural Networks for Digits Comparison.
 
 The repository contains the code for Project 1 of the [Deep Learning (EE-559)](https://edu.epfl.ch/coursebook/en/deep-learning-EE-559) course at [EPFL](https://www.epfl.ch/en/) during Spring term 2021. 
 
